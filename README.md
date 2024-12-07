@@ -43,3 +43,42 @@ O dashboard utiliza dados das seguintes dimensões:
 - Os dados são atualizados anualmente
 - As taxas são calculadas por 100.000 habitantes
 - As coberturas são apresentadas em percentual
+
+## Visualizações no Mapa
+
+O dashboard agora inclui um mapa interativo com três tipos de visualização:
+
+### 1. Mapa Choropleth
+- Visualização por cores graduadas dos indicadores
+- Comparação entre regiões
+- Tooltip com informações detalhadas
+
+### 2. Mapa de Calor (Heatmap)
+- Densidade de serviços e indicadores
+- Identificação de áreas de concentração
+- Análise de distribuição espacial
+
+### 3. Mapa de Marcadores
+- Localização específica das unidades
+- Ícones diferenciados por tipo de unidade
+- Informações detalhadas em popup
+
+### Filtros Disponíveis
+- Seleção do tipo de visualização
+- Escolha do ano
+- Seleção de indicadores
+- Filtro por tipo de unidade
+
+### Indicadores no Mapa
+- Cobertura do SAMU
+- Cobertura da Atenção Básica
+- Taxa de Mortalidade por IAM
+- Taxa de leitos de UTI
+- Distribuição de unidades (USB, USA, UPA, PA)
+
+### Como usar o mapa
+1. Selecione o tipo de visualização desejada
+2. Escolha o ano de referência
+3. Selecione o indicador ou tipo de unidade
+4. Interaja com o mapa usando zoom e pan
+5. Clique nos elementos para mais informações
