@@ -21,17 +21,36 @@ def load_data():
 # Carregando os dados
 df = load_data()
 
-# Título principal
-st.title('Análise da Rede de Urgências no Estado da Bahia')
-st.markdown('### Avaliação da efetividade no atendimento ao Infarto Agudo do Miocárdio')
+# Lista de todas as regiões da Bahia
+regioes_bahia = sorted(df['regiao'].unique().tolist())
 
 # Sidebar para filtros
 st.sidebar.header('Filtros')
-selected_region = st.sidebar.multiselect(
-    'Selecione as Regiões',
-    options=df['regiao'].unique(),
-    default=df['regiao'].unique()
+
+# Seletor para regiões destacadas
+regioes_destaque = st.sidebar.multiselect(
+    'Selecione as Regiões para Destacar (máx. 2)',
+    regioes_bahia,
+    default=regioes_bahia[:2],  # Seleciona as duas primeiras por padrão
+    max_selections=2
 )
+
+# Seletor para todas as regiões
+selected_region = st.sidebar.multiselect(
+    'Selecione as Regiões para Análise',
+    regioes_bahia,
+    default=regioes_bahia
+)
+
+# Função auxiliar para definir cores
+def get_color_scheme(regiao):
+    if regiao in regioes_destaque:
+        return regioes_destaque.index(regiao)  # 0 ou 1 para as regiões destacadas
+    return 2  # outras regiões
+
+# Título principal
+st.title('Análise da Rede de Urgências no Estado da Bahia')
+st.markdown('### Avaliação da efetividade no atendimento ao Infarto Agudo do Miocárdio')
 
 selected_years = st.sidebar.slider(
     'Selecione o Período',
@@ -74,7 +93,8 @@ fig_mortality = px.line(
     x='ano',
     y='taxa_mortalidade_iam',
     color='regiao',
-    title='Taxa de Mortalidade por IAM ao longo do tempo'
+    title='Taxa de Mortalidade por IAM ao longo do tempo',
+    color_discrete_sequence=['#FF0000', '#0000FF'] + ['#A0A0A0']*(len(selected_region)-2)
 )
 st.plotly_chart(fig_mortality, use_container_width=True)
 
@@ -88,7 +108,8 @@ with col1:
         x='ano',
         y='cobertura_samu',
         color='regiao',
-        title='Cobertura do SAMU (%)'
+        title='Cobertura do SAMU (%)',
+        color_discrete_sequence=['#FF0000', '#0000FF'] + ['#A0A0A0']*(len(selected_region)-2)
     )
     st.plotly_chart(fig_samu, use_container_width=True)
 
@@ -99,7 +120,8 @@ with col2:
         x='ano',
         y='cobertura_atencao_basica',
         color='regiao',
-        title='Cobertura da Atenção Básica (%)'
+        title='Cobertura da Atenção Básica (%)',
+        color_discrete_sequence=['#FF0000', '#0000FF'] + ['#A0A0A0']*(len(selected_region)-2)
     )
     st.plotly_chart(fig_ab, use_container_width=True)
 
