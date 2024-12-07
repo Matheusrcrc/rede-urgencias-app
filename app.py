@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -15,43 +16,44 @@ st.set_page_config(
 # Função para carregar dados
 @st.cache_data
 def load_data():
-    df = pd.read_csv('dados_rede_urgencias.csv')
+    df = pd.read_csv('dados_rede_urgencias_bahia.csv')
     return df
 
 # Carregando os dados
 df = load_data()
 
-# Lista de todas as regiões da Bahia
-regioes_bahia = sorted(df['regiao'].unique().tolist())
+# Título principal
+st.title('Análise da Rede de Urgências no Estado da Bahia')
+st.markdown('### Dashboard de Monitoramento e Avaliação')
 
 # Sidebar para filtros
 st.sidebar.header('Filtros')
 
-# Seletor para regiões destacadas
-regioes_destaque = st.sidebar.multiselect(
-    'Selecione as Regiões para Destacar (máx. 2)',
-    regioes_bahia,
-    default=regioes_bahia[:2],  # Seleciona as duas primeiras por padrão
-    max_selections=2
+# Agrupamento por macrorregião
+macrorregioes = {
+    'NORTE': ['JUAZEIRO', 'PAULO AFONSO'],
+    'CENTRO-NORTE': ['JACOBINA', 'IRECÊ', 'SEABRA'],
+    'NORDESTE': ['ALAGOINHAS', 'RIBEIRA DO POMBAL', 'SERRINHA'],
+    'LESTE': ['SALVADOR', 'CAMAÇARI', 'CRUZ DAS ALMAS', 'SANTO ANTÔNIO DE JESUS'],
+    'CENTRO-LESTE': ['FEIRA DE SANTANA'],
+    'SUDOESTE': ['VITÓRIA DA CONQUISTA', 'BRUMADO', 'GUANAMBI', 'ITAPETINGA'],
+    'SUL': ['ILHÉUS', 'ITABUNA', 'TEIXEIRA DE FREITAS', 'VALENÇA', 'PORTO SEGURO'],
+    'OESTE': ['BARREIRAS', 'SANTA MARIA DA VITÓRIA', 'IBOTIRAMA', 'BOM JESUS DA LAPA']
+}
+
+# Criar seletor de macrorregião
+selected_macro = st.sidebar.multiselect(
+    'Selecione as Macrorregiões',
+    options=list(macrorregioes.keys()),
+    default=list(macrorregioes.keys())[0]
 )
 
-# Seletor para todas as regiões
-selected_region = st.sidebar.multiselect(
-    'Selecione as Regiões para Análise',
-    regioes_bahia,
-    default=regioes_bahia
-)
+# Criar lista de regiões baseada nas macrorregiões selecionadas
+selected_regions = []
+for macro in selected_macro:
+    selected_regions.extend(macrorregioes[macro])
 
-# Função auxiliar para definir cores
-def get_color_scheme(regiao):
-    if regiao in regioes_destaque:
-        return regioes_destaque.index(regiao)  # 0 ou 1 para as regiões destacadas
-    return 2  # outras regiões
-
-# Título principal
-st.title('Análise da Rede de Urgências no Estado da Bahia')
-st.markdown('### Avaliação da efetividade no atendimento ao Infarto Agudo do Miocárdio')
-
+# Filtro de período
 selected_years = st.sidebar.slider(
     'Selecione o Período',
     min_value=int(df['ano'].min()),
@@ -60,109 +62,134 @@ selected_years = st.sidebar.slider(
 )
 
 # Filtrando dados
-mask = (df['regiao'].isin(selected_region)) & (df['ano'].between(selected_years[0], selected_years[1]))
+mask = (df['regiao'].isin(selected_regions)) & (df['ano'].between(selected_years[0], selected_years[1]))
 filtered_df = df[mask]
 
 # Layout em três colunas para métricas principais
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     st.metric(
-        "População Total (Última estimativa)",
+        "População Total",
         f"{filtered_df[filtered_df['ano'] == filtered_df['ano'].max()]['populacao_estimada'].sum():,.0f}"
     )
 
 with col2:
     st.metric(
-        "Cobertura Média SAMU",
+        "Cobertura SAMU",
         f"{filtered_df['cobertura_samu'].mean():.1f}%"
     )
 
 with col3:
     st.metric(
+        "Cobertura Atenção Básica",
+        f"{filtered_df['cobertura_atencao_basica'].mean():.1f}%"
+    )
+
+with col4:
+    st.metric(
         "Taxa Média de Mortalidade IAM",
         f"{filtered_df['taxa_mortalidade_iam'].mean():.1f}"
     )
 
-# Gráficos
-st.markdown('### Análise Temporal dos Indicadores')
+# Tabs para diferentes análises
+tab1, tab2, tab3 = st.tabs(["Indicadores Temporais", "Estrutura da Rede", "Análise Regional"])
 
-# Gráfico 1: Taxa de Mortalidade por IAM
-fig_mortality = px.line(
-    filtered_df,
-    x='ano',
-    y='taxa_mortalidade_iam',
-    color='regiao',
-    title='Taxa de Mortalidade por IAM ao longo do tempo',
-    color_discrete_sequence=['#FF0000', '#0000FF'] + ['#A0A0A0']*(len(selected_region)-2)
-)
-st.plotly_chart(fig_mortality, use_container_width=True)
-
-# Duas colunas para mais gráficos
-col1, col2 = st.columns(2)
-
-with col1:
-    # Gráfico de Cobertura do SAMU
-    fig_samu = px.line(
+with tab1:
+    # Gráfico 1: Taxa de Mortalidade por IAM
+    st.subheader('Evolução Temporal dos Indicadores')
+    
+    # Seletor de indicador
+    indicador = st.selectbox(
+        'Selecione o Indicador',
+        ['taxa_mortalidade_iam', 'cobertura_samu', 'cobertura_atencao_basica', 'taxa_leitos_uti']
+    )
+    
+    nomes_indicadores = {
+        'taxa_mortalidade_iam': 'Taxa de Mortalidade por IAM',
+        'cobertura_samu': 'Cobertura SAMU (%)',
+        'cobertura_atencao_basica': 'Cobertura da Atenção Básica (%)',
+        'taxa_leitos_uti': 'Taxa de Leitos UTI'
+    }
+    
+    fig = px.line(
         filtered_df,
         x='ano',
-        y='cobertura_samu',
+        y=indicador,
         color='regiao',
-        title='Cobertura do SAMU (%)',
-        color_discrete_sequence=['#FF0000', '#0000FF'] + ['#A0A0A0']*(len(selected_region)-2)
+        title=f'Evolução do Indicador: {nomes_indicadores[indicador]}'
     )
-    st.plotly_chart(fig_samu, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
 
-with col2:
-    # Gráfico de Cobertura da Atenção Básica
-    fig_ab = px.line(
-        filtered_df,
-        x='ano',
-        y='cobertura_atencao_basica',
+with tab2:
+    st.subheader('Estrutura da Rede de Urgências')
+    
+    # Criar gráfico de barras para estrutura
+    latest_year = filtered_df['ano'].max()
+    latest_data = filtered_df[filtered_df['ano'] == latest_year]
+
+    # Seletor de tipo de unidade
+    unit_type = st.selectbox(
+        'Tipo de Unidade',
+        ['Todas', 'USB', 'USA', 'UPA', 'PA']
+    )
+
+    if unit_type == 'Todas':
+        estrutura_cols = ['n_usb', 'n_usa', 'n_upa', 'n_pa']
+        estrutura_data = latest_data.melt(
+            id_vars=['regiao'],
+            value_vars=estrutura_cols,
+            var_name='tipo_unidade',
+            value_name='quantidade'
+        )
+        
+        fig = px.bar(
+            estrutura_data,
+            x='regiao',
+            y='quantidade',
+            color='tipo_unidade',
+            title=f'Estrutura da Rede de Urgências por Região (Ano: {latest_year})',
+            barmode='group'
+        )
+    else:
+        col_map = {'USB': 'n_usb', 'USA': 'n_usa', 'UPA': 'n_upa', 'PA': 'n_pa'}
+        fig = px.bar(
+            latest_data,
+            x='regiao',
+            y=col_map[unit_type],
+            title=f'Quantidade de {unit_type} por Região (Ano: {latest_year})'
+        )
+    
+    fig.update_layout(xaxis_tickangle=-45)
+    st.plotly_chart(fig, use_container_width=True)
+
+with tab3:
+    st.subheader('Análise Comparativa Regional')
+    
+    # Seletor de indicadores para comparação
+    indicador_x = st.selectbox(
+        'Indicador Eixo X',
+        ['cobertura_samu', 'cobertura_atencao_basica', 'taxa_leitos_uti', 'taxa_mortalidade_iam'],
+        key='ind_x'
+    )
+    
+    indicador_y = st.selectbox(
+        'Indicador Eixo Y',
+        ['taxa_mortalidade_iam', 'cobertura_samu', 'cobertura_atencao_basica', 'taxa_leitos_uti'],
+        key='ind_y'
+    )
+    
+    # Criar scatter plot
+    latest_data = filtered_df[filtered_df['ano'] == latest_year]
+    fig = px.scatter(
+        latest_data,
+        x=indicador_x,
+        y=indicador_y,
         color='regiao',
-        title='Cobertura da Atenção Básica (%)',
-        color_discrete_sequence=['#FF0000', '#0000FF'] + ['#A0A0A0']*(len(selected_region)-2)
+        title=f'Correlação entre {nomes_indicadores[indicador_x]} e {nomes_indicadores[indicador_y]}',
+        hover_data=['populacao_estimada']
     )
-    st.plotly_chart(fig_ab, use_container_width=True)
-
-# Mapa da estrutura
-st.markdown('### Estrutura da Rede de Urgências')
-
-# Criar gráfico de barras para estrutura
-latest_year = filtered_df['ano'].max()
-latest_data = filtered_df[filtered_df['ano'] == latest_year]
-
-estrutura_cols = ['n_usb', 'n_usa', 'n_upa', 'n_pa']
-estrutura_data = latest_data.melt(
-    id_vars=['regiao'],
-    value_vars=estrutura_cols,
-    var_name='tipo_unidade',
-    value_name='quantidade'
-)
-
-fig_estrutura = px.bar(
-    estrutura_data,
-    x='regiao',
-    y='quantidade',
-    color='tipo_unidade',
-    title=f'Estrutura da Rede de Urgências por Região (Ano: {latest_year})',
-    barmode='group'
-)
-st.plotly_chart(fig_estrutura, use_container_width=True)
-
-# Correlação entre indicadores
-st.markdown('### Correlação entre Indicadores')
-
-# Selecionando colunas numéricas para correlação
-numeric_cols = ['cobertura_atencao_basica', 'cobertura_samu', 'taxa_leitos_uti', 'taxa_mortalidade_iam']
-corr_matrix = filtered_df[numeric_cols].corr()
-
-fig_corr = px.imshow(
-    corr_matrix,
-    title='Matriz de Correlação entre Indicadores',
-    color_continuous_scale='RdBu'
-)
-st.plotly_chart(fig_corr, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)
 
 # Análise detalhada
 st.markdown('### Análise Detalhada dos Dados')
@@ -178,3 +205,16 @@ st.download_button(
     file_name="dados_rede_urgencias_filtrados.csv",
     mime="text/csv",
 )
+
+# Adicionar footer com informações
+st.markdown('---')
+st.markdown('''
+    #### Notas:
+    - Os dados apresentados são atualizados anualmente
+    - A taxa de mortalidade por IAM é calculada por 100.000 habitantes
+    - A cobertura do SAMU e da Atenção Básica é apresentada em percentual
+    - USB: Unidade de Suporte Básico
+    - USA: Unidade de Suporte Avançado
+    - UPA: Unidade de Pronto Atendimento
+    - PA: Pronto Atendimento
+''')

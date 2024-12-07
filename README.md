@@ -1,42 +1,45 @@
+# Dashboard da Rede de Urgências da Bahia
 
-# Análise da Rede de Urgências - Bahia
+## Sobre
+Este dashboard apresenta uma análise completa da rede de urgências e emergências do estado da Bahia, incluindo todas as regiões de saúde.
 
-## Sobre o Projeto
-Aplicação para análise da efetividade da rede de atenção às urgências no atendimento ao Infarto Agudo do Miocárdio no estado da Bahia.
+## Funcionalidades
+- Visualização de indicadores por macrorregião
+- Análise temporal de indicadores chave
+- Comparação entre regiões de saúde
+- Mapeamento da estrutura da rede
+- Download de dados filtrados
 
-## Instalação
-
-1. Clone o repositório
-2. Instale as dependências:
+## Como executar
+1. Instale as dependências:
 ```bash
 pip install -r requirements.txt
 ```
 
-## Executando a aplicação
-
+2. Execute o aplicativo:
 ```bash
 streamlit run app.py
 ```
 
-## Funcionalidades
+## Estrutura de Dados
+O dashboard utiliza dados das seguintes dimensões:
+- Cobertura do SAMU
+- Cobertura da Atenção Básica
+- Taxa de Mortalidade por IAM
+- Distribuição de unidades (USB, USA, UPA, PA)
+- Taxa de leitos de UTI
 
-- Visualização temporal dos indicadores
-- Análise comparativa entre regiões
-- Correlação entre diferentes métricas
-- Download dos dados filtrados
-- Filtros por região e período
+## Macrorregiões de Saúde
+- NORTE
+- CENTRO-NORTE
+- NORDESTE
+- LESTE
+- CENTRO-LESTE
+- SUDOESTE
+- SUL
+- OESTE
 
-## Estrutura dos Dados
-
-O aplicativo analisa os seguintes indicadores:
-- População estimada
-- Cobertura de atenção básica
-- Cobertura SAMU
-- Número de unidades (USB, USA, UPA, PA)
-- Taxa de leitos UTI
-- Taxa de mortalidade por IAM
-
-## Regiões Analisadas
-
-- Alagoinhas (código 290001)
-- Ribeira do Pombal (código 29019)
+## Notas
+- Os dados são atualizados anualmente
+- As taxas são calculadas por 100.000 habitantes
+- As coberturas são apresentadas em percentual
